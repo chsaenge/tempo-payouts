@@ -1,65 +1,196 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { EXPLORER_URL, TOKEN_LABELS, TOKENS } from "@/lib/constants";
+
+type TransferResult = {
+  hash: string;
+  from: string;
+  to: string;
+  amount: string;
+  settlementMs: number;
+};
 
 export default function Home() {
+  const [to, setTo] = useState("");
+  const [amount, setAmount] = useState("");
+  const [memo, setMemo] = useState("");
+  const [token, setToken] = useState(TOKENS.pathUSD);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<TransferResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function sendTransfer() {
+    setLoading(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to, amount, memo, token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Transfer failed");
+      setResult(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">Tempo Payouts</h1>
+            <p className="text-xs text-zinc-500">Gig worker disbursements · Moderato testnet</p>
+          </div>
+          <span className="text-xs bg-amber-100 text-amber-700 font-medium px-2 py-1 rounded-full">
+            Testnet
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10 space-y-6">
+        {/* Send form */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-6 space-y-5">
+          <h2 className="font-medium text-sm text-zinc-500 uppercase tracking-wider">
+            Send Payout
+          </h2>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Recipient address</label>
+            <input
+              type="text"
+              placeholder="0x..."
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-zinc-900"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium">Amount</label>
+              <input
+                type="number"
+                placeholder="100.00"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Token</label>
+              <select
+                value={token}
+                onChange={(e) => setToken(e.target.value as `0x${string}`)}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+              >
+                {Object.entries(TOKENS).map(([, addr]) => (
+                  <option key={addr} value={addr}>
+                    {TOKEN_LABELS[addr]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">
+              Memo{" "}
+              <span className="text-zinc-400 font-normal">(reconciliation reference)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="worker_001 · INV-2025-001"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+            />
+          </div>
+
+          <button
+            onClick={sendTransfer}
+            disabled={loading || !to || !amount}
+            className="w-full rounded-lg bg-zinc-900 text-white py-2.5 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Documentation
-          </a>
+            {loading ? "Sending…" : "Send Payout"}
+          </button>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Result */}
+        {result && (
+          <div className="bg-white rounded-xl border border-emerald-200 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-500 text-lg">✓</span>
+              <h2 className="font-medium">Payout Sent</h2>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <Row label="Amount" value={`${result.amount} ${TOKEN_LABELS[token]}`} />
+              <Row label="To" value={result.to} mono />
+              <Row label="From" value={result.from} mono />
+              <Row
+                label="Settlement"
+                value={`${(result.settlementMs / 1000).toFixed(2)}s`}
+                highlight
+              />
+              <Row label="Tx hash" value={`${result.hash.slice(0, 18)}…`} mono />
+            </div>
+
+            <a
+              href={`${EXPLORER_URL}/tx/${result.hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+            >
+              View on explorer ↗
+            </a>
+          </div>
+        )}
+
+        {/* Context note */}
+        <p className="text-xs text-zinc-400 text-center">
+          Operator wallet sponsors all gas fees · Recipients receive stablecoins with zero native token required
+        </p>
       </main>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  mono,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-zinc-500">{label}</span>
+      <span
+        className={`${mono ? "font-mono text-xs" : ""} ${highlight ? "text-emerald-600 font-semibold" : "text-zinc-900"} truncate max-w-xs`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
