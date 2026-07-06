@@ -2,7 +2,7 @@
 
 Live stablecoin batch payouts app built on [Tempo](https://tempo.xyz) (Moderato testnet). Disburses instant payments to gig workers — eliminating T+1 ACH delays and bank account requirements.
 
-**[Live demo →](https://tempo-payouts.vercel.app)** *(deployed on Vercel)*
+**[Live demo →](https://tempo-payouts.vercel.app)**
 
 ---
 
