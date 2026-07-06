@@ -1,8 +1,3 @@
-// Visa corporate proxy uses a custom CA cert Node doesn't trust — disable only outside production
-if (process.env.NODE_ENV !== 'production') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-}
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from 'viem/tempo'
 import { privateKeyToAccount } from 'viem/accounts'
