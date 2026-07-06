@@ -512,11 +512,11 @@ type CompareRow = {
 function buildRows(saved: SavedStats | null): CompareRow[] {
   const tempoAvg = saved?.avgSettlementMs != null
     ? `${(saved.avgSettlementMs / 1000).toFixed(2)}s`
-    : "~0.85s";
+    : "~1.78s";
   const tempoMin = saved?.minSettlementMs != null
     ? ` (min ${(saved.minSettlementMs / 1000).toFixed(2)}s)`
     : "";
-  const tempoCount = saved ? ` · ${saved.succeeded} txs measured` : " · measured live";
+  const tempoCount = saved ? ` · ${saved.succeeded} txs measured` : " · 50 txs measured";
 
   return [
     {
@@ -524,8 +524,8 @@ function buildRows(saved: SavedStats | null): CompareRow[] {
       sub: "Time from send to finality",
       values: {
         tempo: `${tempoAvg}${tempoMin}${tempoCount}`,
-        ach: "T+1 business day (~24 hrs)",
-        wire: "Same day if before cutoff / T+1",
+        ach: "T+1 business day (~24 hrs, 86,400s)",
+        wire: "Same day if before cutoff / T+1 (~8–86,400s)",
       },
       highlight: "tempo",
     },
@@ -595,6 +595,12 @@ function CompareTab() {
   }, []);
 
   const rows = buildRows(saved);
+  const avgMs = saved?.avgSettlementMs ?? 1780;
+  const achMs = 24 * 60 * 60 * 1000;
+  const multiplier = Math.round(achMs / avgMs / 1000) * 1000;
+  const multiplierLabel = multiplier >= 1000
+    ? `~${(multiplier / 1000).toFixed(0)}k×`
+    : `~${multiplier}×`;
 
   return (
     <>
@@ -608,16 +614,16 @@ function CompareTab() {
             <p className="text-3xl font-bold text-emerald-600 tabular-nums">
               {saved?.avgSettlementMs != null
                 ? `${(saved.avgSettlementMs / 1000).toFixed(2)}s`
-                : "~0.85s"}
+                : "~1.78s"}
             </p>
             <p className="text-sm text-zinc-500 mt-1">
               avg on Tempo Moderato testnet
-              {saved ? ` · ${saved.succeeded} payouts` : " · run a batch to update"}
+              {saved ? ` · ${saved.succeeded} payouts` : " · 50 txs measured"}
             </p>
           </div>
           <div className="text-right shrink-0">
             <p className="text-xs text-zinc-400 mb-1">vs ACH</p>
-            <p className="text-lg font-semibold text-zinc-900">100,000×</p>
+            <p className="text-lg font-semibold text-zinc-900">{multiplierLabel}</p>
             <p className="text-xs text-zinc-400">faster</p>
           </div>
         </div>
